@@ -678,7 +678,7 @@
       The methodology was conceived to address a specific failure mode of AI-assisted development:
       LLMs generate confident-looking code that passes a visual review but silently
       breaks existing contracts, ignores edge cases, or drifts from the original intent.
-      STDD installs two checkpoints — spec validation and test validation — before
+      STDD proposes two checkpoints — spec validation and test validation — before
       any code ever reaches your codebase.
     </p>
 
@@ -1454,69 +1454,87 @@ No test files modified</pre>
     <div class="benefits">
       <div class="benefit">
         <div class="benefit-icon">🛡️</div>
-        <h4>No Silent Regressions</h4>
-        <p>The full regression suite runs before any code is merged. LLM-generated code that breaks existing contracts is caught immediately, not in production.</p>
+        <h4>Fewer Silent Regressions</h4>
+        <p>Running the full test suite before merging gives LLM-generated code a concrete contract to satisfy. Regressions can still happen — but only if the tests themselves are incomplete or poorly written.</p>
       </div>
       <div class="benefit">
         <div class="benefit-icon">🎯</div>
-        <h4>Unambiguous "Done"</h4>
-        <p>A feature is complete when all spec-derived tests are green. There is no subjectivity. Reviews become much faster because the criteria are explicit.</p>
+        <h4>Clearer Definition of "Done"</h4>
+        <p>When acceptance criteria are in the spec, "done" becomes a question of passing tests rather than personal judgment. This reduces friction in reviews — provided the spec was precise enough to begin with.</p>
       </div>
       <div class="benefit">
         <div class="benefit-icon">📎</div>
-        <h4>Full Traceability</h4>
-        <p>Every test maps to an acceptance criterion. Every line of production code exists to make a test pass. Audits, postmortems, and onboarding all benefit.</p>
+        <h4>Traceable Decisions</h4>
+        <p>Each test traces back to a spec criterion; each spec criterion traces back to a requirement. This makes postmortems, audits, and onboarding easier — not automatic, but easier.</p>
       </div>
       <div class="benefit">
         <div class="benefit-icon">🤖</div>
-        <h4>LLM as Amplifier, Not Author</h4>
-        <p>The LLM never decides what to build. It executes well-defined tasks: generate tests from spec, generate code from tests. Human judgment stays in control.</p>
+        <h4>LLM with a Bounded Role</h4>
+        <p>Giving the LLM a specific task at each phase — review, generate tests, implement — reduces the risk of open-ended prompting where the model fills gaps with plausible-but-wrong assumptions.</p>
       </div>
       <div class="benefit">
         <div class="benefit-icon">🔄</div>
-        <h4>Safe Iteration</h4>
-        <p>Changing a feature means updating the spec first, then the tests, then the code — in that order. Scope creep and design drift are structurally prevented.</p>
+        <h4>Change Has a Starting Point</h4>
+        <p>When a feature needs to change, the spec is the first thing to update — which makes the scope of the change explicit before any code is touched. In practice, the discipline to enforce this order requires team buy-in.</p>
       </div>
       <div class="benefit">
         <div class="benefit-icon">📦</div>
-        <h4>Works on Legacy Codebases</h4>
-        <p>Unlike spec-as-source approaches, STDD requires no rewrite of existing systems. It can be adopted incrementally, one feature at a time.</p>
+        <h4>No Big-Bang Adoption</h4>
+        <p>STDD does not require rewriting existing code or introducing new tooling. It can be tried on a single feature in an existing project without committing the whole team.</p>
       </div>
     </div>
-
-    <h3>Known Trade-offs</h3>
-    <p>
-      STDD is not free. It requires more upfront discipline than simply prompting an LLM
-      and shipping whatever comes out. Teams adopting STDD should expect:
-    </p>
-    <ul style="padding-left:1.5rem; color:var(--muted); margin-bottom:1.5rem;">
-      <li style="margin-bottom:.5rem;">
-        <strong style="color:var(--text);">Higher initial cost per feature</strong> —
-        Writing a thorough spec and reviewing LLM-generated tests takes real time.
-        The payoff is in reduced debugging, fewer incidents, and faster reviews.
-      </li>
-      <li style="margin-bottom:.5rem;">
-        <strong style="color:var(--text);">Spec quality determines everything</strong> —
-        A vague spec produces vague tests and unpredictable code. The methodology
-        raises the stakes on specification quality.
-      </li>
-      <li style="margin-bottom:.5rem;">
-        <strong style="color:var(--text);">Not ideal for exploratory work</strong> —
-        Prototypes, spikes, and discovery work should not use STDD. Apply it when
-        building features for production systems with real users.
-      </li>
-      <li>
-        <strong style="color:var(--text);">Requires test discipline</strong> —
-        STDD only works if the team is committed to never modifying tests to make
-        them pass. This requires cultural buy-in, not just tooling.
-      </li>
-    </ul>
 
     <blockquote>
       "The spec is the contract. The tests are its executable form. The code is just
        one possible implementation — and the cheapest part of the whole pipeline."
       <cite>— STDD proposal</cite>
     </blockquote>
+
+    <h3>STDD Scales to Small Features Too</h3>
+    <p>
+      The password reset example in this article is intentionally detailed to show the methodology in full.
+      But STDD does not require that level of formality for every feature. Here is the same
+      pipeline applied to something much smaller — adding a character limit to a text field:
+    </p>
+    <div class="example-tabs">
+      <div class="tab-header">
+        <span class="active">📋 spec.md — small feature</span>
+      </div>
+      <div class="tab-content">
+<pre><span style="color:#6c8eff"># SPEC: Bio field character limit</span>
+<span style="color:#34d399">## AC-01:</span> Bio input accepts up to 160 characters
+<span style="color:#34d399">## AC-02:</span> Submitting with 161+ characters returns a validation error
+<span style="color:#34d399">## AC-03:</span> Error message reads: "Bio must be 160 characters or fewer"
+<span style="color:#34d399">## AC-04:</span> Empty bio is valid (field is optional)</pre>
+      </div>
+    </div>
+    <div class="example-tabs" style="margin-top:.75rem;">
+      <div class="tab-header">
+        <span class="active">🧪 bio.test.ts — derived from spec</span>
+      </div>
+      <div class="tab-content">
+<pre><span style="color:#8892a4">// AC-01</span>
+it(<span style="color:#34d399">'accepts a bio of exactly 160 characters'</span>, () => {
+  expect(validateBio(<span style="color:#34d399">'a'.repeat(160)</span>)).toBeNull()
+})
+<span style="color:#8892a4">// AC-02</span>
+it(<span style="color:#34d399">'rejects a bio of 161 characters'</span>, () => {
+  expect(validateBio(<span style="color:#34d399">'a'.repeat(161)</span>)).not.toBeNull()
+})
+<span style="color:#8892a4">// AC-03</span>
+it(<span style="color:#34d399">'returns the correct error message'</span>, () => {
+  expect(validateBio(<span style="color:#34d399">'a'.repeat(161)</span>)).toBe(<span style="color:#34d399">'Bio must be 160 characters or fewer'</span>)
+})
+<span style="color:#8892a4">// AC-04</span>
+it(<span style="color:#34d399">'accepts an empty bio'</span>, () => {
+  expect(validateBio(<span style="color:#34d399">''</span>)).toBeNull()
+})</pre>
+      </div>
+    </div>
+    <p style="color:var(--muted); font-size:.88rem; margin-top:.75rem;">
+      Four acceptance criteria → four tests → one pure function to implement.
+      The spec took two minutes to write. The discipline is the same regardless of feature size.
+    </p>
 
     <h3>Try It on One Feature</h3>
     <p>
