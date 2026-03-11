@@ -1096,7 +1096,9 @@ feature.test.ts pass. Hard constraints:
           <p>
             Final human review checks that the implementation matches the <em>spirit</em>
             of the spec — not just the letter of the tests. The spec, tests, and code
-            are committed together as a single atomic change.
+            are committed in order — spec first, then tests, then code — so any
+            reviewer can verify that tests existed and were red before implementation began.
+            Never squash these into a single commit: the sequence is the proof.
           </p>
         </div>
       </li>
@@ -1502,7 +1504,11 @@ No test files modified</pre>
 5. Confirm all tests are red
 6. Prompt your LLM to implement the feature against the tests
 7. Verify: new tests green, no regressions
-8. Commit spec + tests + code as one atomic PR</pre>
+8. Commit in order: spec → tests → code (never squash)
+   # Each commit is a verifiable gate — the sequence is the proof
+   git commit "feat: add spec for X"        # tests must fail at this point
+   git commit "test: add failing tests for X" # CI confirms: all red
+   git commit "feat: implement X"            # CI confirms: all green, no regressions</pre>
     <p>
       After three features, the pattern will feel natural. After ten,
       you will not want to develop any other way.
