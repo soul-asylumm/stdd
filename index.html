@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STDD — Spec & Test-Driven Development</title>
+  <style>
+    :root {
+      --bg:         #0f1117;
+      --surface:    #181b24;
+      --surface2:   #1e2231;
+      --border:     #2a2f42;
+      --accent:     #6c8eff;
+      --accent2:    #a78bfa;
+      --accent3:    #34d399;
+      --accent4:    #fb923c;
+      --text:       #e2e8f0;
+      --muted:      #8892a4;
+      --code-bg:    #12151f;
+      --pill-spec:  #1e3a5f;
+      --pill-test:  #1a3a2a;
+      --pill-code:  #2d1f3d;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15,17,23,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 2rem;
+    }
+    nav .logo {
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--accent);
+      letter-spacing: .05em;
+    }
+    nav .logo span { color: var(--accent2); }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.5rem;
+    }
+    nav ul a {
+      color: var(--muted);
+      text-decoration: none;
+      font-family: 'Courier New', monospace;
+      font-size: .85rem;
+      transition: color .2s;
+    }
+    nav ul a:hover { color: var(--text); }
+
+    /* ── DNA SECTION ── */
+    .dna-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin: 2.5rem 0;
+    }
+    @media (max-width: 640px) { .dna-grid { grid-template-columns: 1fr; } }
+    .dna-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+    }
+    .dna-card h3 { margin-top: 0; }
+    .dna-card.tdd { border-top: 3px solid #f87171; }
+    .dna-card.sdd { border-top: 3px solid var(--accent); }
+    .dna-card.stdd {
+      grid-column: 1 / -1;
+      border-top: 3px solid var(--accent3);
+      background: linear-gradient(135deg, rgba(52,211,153,.05) 0%, var(--surface) 100%);
+    }
+    .dna-label { font-size: .75rem; font-family: 'Courier New', monospace;
+                 letter-spacing: .1em; text-transform: uppercase; margin-bottom: .5rem; }
+    .dna-card.tdd  .dna-label { color: #f87171; }
+    .dna-card.sdd  .dna-label { color: var(--accent); }
+    .dna-card.stdd .dna-label { color: var(--accent3); }
+    .dna-card ul   { padding-left: 1.2rem; color: var(--muted); }
+    .dna-card ul li { margin-bottom: .35rem; }
+    .dna-card ul li strong { color: var(--text); }
+
+    /* ── RGR cycle ── */
+    .rgr {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 2rem 0;
+    }
+    .rgr-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .4rem;
+    }
+    .rgr-dot {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+    .dot-red    { background: rgba(248,113,113,.15); border: 2px solid #f87171; color: #f87171; }
+    .dot-green  { background: rgba(52,211,153,.15);  border: 2px solid var(--accent3); color: var(--accent3); }
+    .dot-blue   { background: rgba(108,142,255,.15); border: 2px solid var(--accent); color: var(--accent); }
+    .rgr-label  { font-family: 'Courier New', monospace; font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .rgr-arrow  { color: var(--border); font-size: 1.3rem; padding-bottom: 1.5rem; }
+
+    /* ── SDD MATURITY ── */
+    .maturity {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+    @media (max-width: 640px) { .maturity { grid-template-columns: 1fr; } }
+    .mat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+    .mat-card .mat-num {
+      font-family: 'Courier New', monospace;
+      font-size: .7rem;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+    .mat-card h4 { font-size: .95rem; margin-bottom: .4rem; }
+    .mat-card p  { font-size: .82rem; color: var(--muted); margin: 0; }
+    .mat-card.active { border-color: var(--accent3); background: rgba(52,211,153,.06); }
+    .mat-card.active h4 { color: var(--accent3); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(108,142,255,.15) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(167,139,250,.10) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 20% 70%, rgba(52,211,153,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(108,142,255,.15);
+      border: 1px solid rgba(108,142,255,.3);
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+      font-size: .8rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: .35rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 700;
+      letter-spacing: -.02em;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+    }
+    .hero h1 .s { color: var(--accent); }
+    .hero h1 .t { color: var(--accent2); }
+    .hero h1 .d { color: var(--accent3); }
+    .hero h1 .d2{ color: var(--accent4); }
+    .hero-sub {
+      font-size: 1.25rem;
+      color: var(--muted);
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+    }
+    .hero-sub strong { color: var(--text); }
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-block;
+      padding: .75rem 1.75rem;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: .95rem;
+      text-decoration: none;
+      transition: all .2s;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0f1117;
+      font-weight: 700;
+    }
+    .btn-primary:hover { background: #8aaaff; }
+    .btn-outline {
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── PIPELINE HERO ── */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 3.5rem auto 0;
+      max-width: 680px;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+    .pipeline-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .35rem;
+    }
+    .pipeline-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+    .icon-spec  { background: var(--pill-spec);  border: 1px solid rgba(108,142,255,.4); }
+    .icon-test  { background: var(--pill-test);  border: 1px solid rgba(52,211,153,.4);  }
+    .icon-code  { background: var(--pill-code);  border: 1px solid rgba(167,139,250,.4); }
+    .pipeline-label {
+      font-family: 'Courier New', monospace;
+      font-size: .75rem;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .pipeline-arrow {
+      font-size: 1.5rem;
+      color: var(--border);
+      margin: 0 .25rem;
+      padding-bottom: 1.4rem;
+    }
+
+    /* ── CONTENT ── */
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    section { padding: 5rem 0; }
+    section + section { border-top: 1px solid var(--border); }
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      letter-spacing: -.02em;
+    }
+    h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 2rem 0 .75rem;
+    }
+    p { margin-bottom: 1.25rem; color: var(--text); }
+    p.muted { color: var(--muted); font-size: .95rem; }
+
+    /* ── CALLOUT ── */
+    .callout {
+      border-left: 3px solid var(--accent);
+      background: var(--surface);
+      padding: 1.25rem 1.5rem;
+      border-radius: 0 8px 8px 0;
+      margin: 2rem 0;
+    }
+    .callout.green  { border-color: var(--accent3); }
+    .callout.purple { border-color: var(--accent2); }
+    .callout.orange { border-color: var(--accent4); }
+    .callout strong { display: block; margin-bottom: .4rem; color: var(--accent); }
+    .callout.green  strong { color: var(--accent3); }
+    .callout.purple strong { color: var(--accent2); }
+    .callout.orange strong { color: var(--accent4); }
+
+    /* ── CODE ── */
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      font-family: 'Courier New', monospace;
+      font-size: .85rem;
+      line-height: 1.7;
+    }
+    code { font-family: 'Courier New', monospace; }
+    p code, li code {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      padding: .1em .4em;
+      border-radius: 4px;
+      font-size: .85em;
+    }
+
+    /* ── PHASE CARDS ── */
+    .phase-cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      margin: 2.5rem 0;
+    }
+    .phase-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .phase-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .phase-card.spec::before  { background: var(--accent); }
+    .phase-card.test::before  { background: var(--accent3); }
+    .phase-card.code::before  { background: var(--accent2); }
+    .phase-num {
+      font-family: 'Courier New', monospace;
+      font-size: .75rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: .5rem;
+    }
+    .spec .phase-num  { color: var(--accent); }
+    .test .phase-num  { color: var(--accent3); }
+    .code .phase-num  { color: var(--accent2); }
+    .phase-card h3 { margin-top: 0; font-size: 1.4rem; }
+    .phase-card ul {
+      padding-left: 1.25rem;
+      color: var(--muted);
+      margin-top: .75rem;
+    }
+    .phase-card ul li { margin-bottom: .4rem; }
+    .phase-card ul li strong { color: var(--text); }
+
+    /* ── LOOP DIAGRAM ── */
+    .loop-diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2.5rem;
+      margin: 2.5rem 0;
+      text-align: center;
+    }
+    .loop-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin: 1rem 0;
+    }
+    .loop-box {
+      padding: .6rem 1.25rem;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: .85rem;
+      font-weight: 700;
+    }
+    .lb-spec   { background: var(--pill-spec);  border: 1px solid rgba(108,142,255,.5); color: var(--accent);  }
+    .lb-test   { background: var(--pill-test);  border: 1px solid rgba(52,211,153,.5);  color: var(--accent3); }
+    .lb-code   { background: var(--pill-code);  border: 1px solid rgba(167,139,250,.5); color: var(--accent2); }
+    .lb-review { background: #1f1a0f; border: 1px solid rgba(251,146,60,.5); color: var(--accent4); }
+    .loop-arrow { color: var(--muted); font-size: 1.2rem; }
+    .loop-sub { color: var(--muted); font-size: .85rem; margin-top: .35rem; }
+
+    /* ── COMPARISON TABLE ── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2rem 0;
+      font-size: .9rem;
+    }
+    .compare-table th {
+      background: var(--surface2);
+      padding: .85rem 1.1rem;
+      text-align: left;
+      font-family: 'Courier New', monospace;
+      font-size: .78rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .compare-table td {
+      padding: .85rem 1.1rem;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .compare-table tr:nth-child(even) td { background: var(--surface); }
+    .compare-table td:first-child { font-weight: 700; white-space: nowrap; }
+    .check { color: var(--accent3); }
+    .cross { color: #f87171; }
+    .partial { color: var(--accent4); }
+
+    /* ── BENEFITS GRID ── */
+    .benefits {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      margin: 2.5rem 0;
+    }
+    .benefit {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+    .benefit-icon { font-size: 1.6rem; margin-bottom: .75rem; }
+    .benefit h4  { font-size: 1rem; margin-bottom: .4rem; }
+    .benefit p   { font-size: .88rem; color: var(--muted); margin: 0; }
+
+    /* ── EXAMPLE BLOCK ── */
+    .example-tabs {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 2rem 0;
+    }
+    .tab-header {
+      display: flex;
+      background: var(--code-bg);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .tab-header span {
+      padding: .65rem 1.25rem;
+      font-family: 'Courier New', monospace;
+      font-size: .8rem;
+      color: var(--muted);
+      white-space: nowrap;
+      border-right: 1px solid var(--border);
+    }
+    .tab-header span.active { color: var(--accent); background: var(--surface2); }
+    .tab-content { background: var(--code-bg); }
+    .tab-content pre {
+      margin: 0;
+      border: none;
+      border-radius: 0;
+    }
+
+    /* ── QUOTE ── */
+    blockquote {
+      border-left: 3px solid var(--accent2);
+      margin: 2.5rem 0;
+      padding: 1.25rem 1.75rem;
+      background: var(--surface);
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+    blockquote cite {
+      display: block;
+      margin-top: .75rem;
+      font-style: normal;
+      font-size: .85rem;
+      color: var(--accent2);
+    }
+
+    /* ── LLM WORKFLOW ── */
+    .llm-steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+      margin: 2rem 0;
+    }
+    .llm-steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      margin-bottom: 1.75rem;
+    }
+    .llm-steps li::before {
+      content: counter(step);
+      min-width: 36px;
+      height: 36px;
+      background: var(--accent);
+      color: #0f1117;
+      font-family: 'Courier New', monospace;
+      font-weight: 700;
+      font-size: .9rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: .15rem;
+    }
+    .llm-steps li h4 { margin-bottom: .3rem; font-size: 1rem; }
+    .llm-steps li p  { margin: 0; color: var(--muted); font-size: .92rem; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer .foot-logo {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: .5rem;
+      color: var(--accent);
+    }
+
+    /* ── UTILS ── */
+    .tag {
+      display: inline-block;
+      padding: .2rem .65rem;
+      border-radius: 999px;
+      font-family: 'Courier New', monospace;
+      font-size: .72rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    .tag-spec   { background: var(--pill-spec);  color: var(--accent);  border: 1px solid rgba(108,142,255,.4); }
+    .tag-test   { background: var(--pill-test);  color: var(--accent3); border: 1px solid rgba(52,211,153,.4);  }
+    .tag-code   { background: var(--pill-code);  color: var(--accent2); border: 1px solid rgba(167,139,250,.4); }
+    .tag-llm    { background: #1f1530; color: #c084fc; border: 1px solid rgba(192,132,252,.4); }
+
+    .accent  { color: var(--accent);  }
+    .green   { color: var(--accent3); }
+    .purple  { color: var(--accent2); }
+    .orange  { color: var(--accent4); }
+
+    @media (max-width: 640px) {
+      nav ul { display: none; }
+      .hero h1 { font-size: 2.4rem; }
+      .pipeline-arrow { display: none; }
+      .compare-table { font-size: .78rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ────────────────────────── NAV ────────────────────────── -->
+<nav>
+  <div class="logo">STDD<span>.dev</span></div>
+  <ul>
+    <li><a href="#what">What</a></li>
+    <li><a href="#foundations">TDD + SDD</a></li>
+    <li><a href="#phases">Phases</a></li>
+    <li><a href="#llm">With LLMs</a></li>
+    <li><a href="#example">Example</a></li>
+    <li><a href="#compare">Compare</a></li>
+    <li><a href="#why">Why</a></li>
+  </ul>
+</nav>
+
+<!-- ────────────────────────── HERO ────────────────────────── -->
+<div class="hero">
+  <div class="hero-badge">Methodology · AI-First Development · Est. March 2026</div>
+  <h1>
+    <span class="s">S</span><span class="t">T</span><span class="d">D</span><span class="d2">D</span>
+  </h1>
+  <h1 style="font-size:clamp(1.2rem,3vw,2rem); font-weight:400; color:var(--muted); letter-spacing:.02em; margin-top:.5rem;">
+    Spec &amp; Test-Driven Development
+  </h1>
+  <p class="hero-sub" style="margin-top:1.5rem;">
+    A development methodology where <strong>specification comes first</strong>,
+    <strong>tests come second</strong>, and implementation only begins when both
+    are validated — enabling safe, predictable AI-assisted coding.
+  </p>
+  <div class="hero-cta">
+    <a href="#what"   class="btn btn-primary">Learn the method</a>
+    <a href="#example" class="btn btn-outline">See an example</a>
+  </div>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="pipeline-icon icon-spec">📋</div>
+      <div class="pipeline-label">1. Spec</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="pipeline-icon icon-test">🧪</div>
+      <div class="pipeline-label">2. Tests</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="pipeline-icon icon-code">⚙️</div>
+      <div class="pipeline-label">3. Code</div>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────────── WHAT ────────────────────────── -->
+<section id="what">
+  <div class="container">
+    <h2>What is STDD?</h2>
+    <p>
+      <strong>Spec &amp; Test-Driven Development (STDD)</strong> is a three-phase methodology
+      designed for the age of LLM-assisted coding. It enforces a strict gate between
+      <em>thinking about what to build</em> and <em>actually building it</em>.
+    </p>
+    <p>
+      Where <span class="tag tag-spec">SDD</span> — popularized by tools like Kiro, Spec-kit and Tessl
+      and analyzed by Birgitta Böckeler (Thoughtworks, 2025) — asks you to write specs before code,
+      and <span class="tag tag-test">TDD</span> — Kent Beck's discipline of Red→Green→Refactor — asks
+      you to write tests before code, STDD fuses both into a single ordered pipeline where
+      each phase artifact enforces the next:
+    </p>
+
+    <div class="callout">
+      <strong>The Core Principle</strong>
+      A specification answers <em>"what should this do?"</em>. Tests verify that answer
+      against observable behavior. Code is just the mechanism that makes tests pass.
+      When an LLM generates code, it must satisfy <em>both layers</em> of truth — not just
+      produce plausible-looking output.
+    </div>
+
+    <p>
+      The methodology was conceived to address a specific failure mode of AI-assisted development:
+      LLMs generate confident-looking code that passes a visual review but silently
+      breaks existing contracts, ignores edge cases, or drifts from the original intent.
+      STDD installs two checkpoints — spec validation and test validation — before
+      any code ever reaches your codebase.
+    </p>
+
+    <blockquote>
+      "The spec is the contract. The tests are the proof. The code is just one possible implementation."
+      <cite>— STDD Design Principle</cite>
+    </blockquote>
+  </div>
+</section>
+
+<!-- ────────────────────────── DNA: TDD + SDD ────────────────────────── -->
+<section id="foundations">
+  <div class="container">
+    <h2>The DNA of STDD</h2>
+    <p>
+      STDD was not invented from scratch. It stands on the shoulders of two mature
+      methodologies — absorbing what each does well and addressing what each leaves
+      unsolved. Understanding the parent disciplines is essential to understanding why
+      STDD is structured the way it is.
+    </p>
+
+    <div class="dna-grid">
+
+      <!-- TDD -->
+      <div class="dna-card tdd">
+        <div class="dna-label">Parent · 1999</div>
+        <h3>🔴 Test-Driven Development</h3>
+        <p>
+          Introduced by Kent Beck as part of Extreme Programming, TDD enforces a
+          simple, powerful loop: write a failing test, write the minimum code to pass
+          it, then refactor. The discipline prevents over-engineering and ensures
+          every line of production code has a reason to exist.
+        </p>
+        <p><strong>The Red → Green → Refactor Cycle:</strong></p>
+        <div class="rgr">
+          <div class="rgr-step">
+            <div class="rgr-dot dot-red">🔴</div>
+            <div class="rgr-label">Red</div>
+            <div style="font-size:.78rem; color:var(--muted); text-align:center; max-width:80px;">Write a failing test</div>
+          </div>
+          <div class="rgr-arrow">→</div>
+          <div class="rgr-step">
+            <div class="rgr-dot dot-green">🟢</div>
+            <div class="rgr-label">Green</div>
+            <div style="font-size:.78rem; color:var(--muted); text-align:center; max-width:80px;">Minimum code to pass</div>
+          </div>
+          <div class="rgr-arrow">→</div>
+          <div class="rgr-step">
+            <div class="rgr-dot dot-blue">🔵</div>
+            <div class="rgr-label">Refactor</div>
+            <div style="font-size:.78rem; color:var(--muted); text-align:center; max-width:80px;">Clean without breaking</div>
+          </div>
+        </div>
+        <p><strong>What TDD gives us:</strong></p>
+        <ul>
+          <li><strong>Verifiable "done":</strong> tests pass = feature complete</li>
+          <li><strong>Regression safety:</strong> full suite must stay green</li>
+          <li><strong>Design feedback:</strong> hard-to-test code = bad design</li>
+          <li><strong>Confidence to refactor:</strong> tests catch regressions immediately</li>
+          <li><strong>Documentation:</strong> tests describe behavior in executable form</li>
+        </ul>
+        <p style="margin-top:1rem;"><strong>What TDD leaves unsolved:</strong></p>
+        <ul>
+          <li>Where do the tests come from? (Usually: developer's memory)</li>
+          <li>Are the tests covering the right requirements?</li>
+          <li>Is the thing being built the right thing?</li>
+        </ul>
+      </div>
+
+      <!-- SDD -->
+      <div class="dna-card sdd">
+        <div class="dna-label">Parent · 2024–2025</div>
+        <h3>📋 Spec-Driven Development</h3>
+        <p>
+          Emerging from the AI-assisted coding wave, SDD — analyzed in depth by
+          Birgitta Böckeler (Thoughtworks) — establishes that specifications must
+          precede code. Tools like Kiro, Spec-kit, and Tessl formalize this as a
+          workflow with structured artifacts.
+        </p>
+        <p><strong>SDD Maturity Levels (Böckeler, 2025):</strong></p>
+        <div class="maturity">
+          <div class="mat-card">
+            <div class="mat-num">Level 1</div>
+            <h4>Spec-First</h4>
+            <p>Spec precedes code, both discarded after delivery</p>
+          </div>
+          <div class="mat-card active">
+            <div class="mat-num">Level 2 ← STDD</div>
+            <h4>Spec-Anchored</h4>
+            <p>Spec persists as a living artifact through evolution</p>
+          </div>
+          <div class="mat-card">
+            <div class="mat-num">Level 3</div>
+            <h4>Spec-as-Source</h4>
+            <p>Only specs are edited; code is fully generated (Tessl)</p>
+          </div>
+        </div>
+        <p><strong>What SDD gives us:</strong></p>
+        <ul>
+          <li><strong>Human-readable intent:</strong> what and why, not how</li>
+          <li><strong>Prevents scope drift:</strong> LLM is anchored to the spec</li>
+          <li><strong>Shared language:</strong> product + engineering alignment artifact</li>
+          <li><strong>Traceability:</strong> every requirement has an origin</li>
+        </ul>
+        <p style="margin-top:1rem;"><strong>SDD's known weaknesses (per Böckeler):</strong></p>
+        <ul>
+          <li>No executable verification — specs can be ignored by LLMs</li>
+          <li>Review overhead: too many markdown files, tedious to audit</li>
+          <li>"False sense of control" — agents still drift from specs</li>
+          <li>Size-of-problem mismatch: overkill for small fixes</li>
+          <li>Spec-as-source risks recapitulating MDD failures</li>
+        </ul>
+      </div>
+
+      <!-- STDD synthesis -->
+      <div class="dna-card stdd">
+        <div class="dna-label">Synthesis · STDD</div>
+        <h3>⚡ How STDD Resolves Both Sets of Weaknesses</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-top:1rem;">
+          <div>
+            <p style="color:var(--accent3); font-weight:700; font-size:.9rem; margin-bottom:.5rem;">TDD weaknesses → STDD solutions</p>
+            <ul>
+              <li><strong>"Where do tests come from?"</strong><br>
+                <span style="color:var(--muted); font-size:.88rem;">→ From the spec. Tests are derived directly from acceptance criteria, not from the developer's memory or assumptions.</span>
+              </li>
+              <li style="margin-top:.75rem;"><strong>"Are we testing the right thing?"</strong><br>
+                <span style="color:var(--muted); font-size:.88rem;">→ Yes, because tests must be traceable 1:1 to a spec criterion. No criterion, no test.</span>
+              </li>
+              <li style="margin-top:.75rem;"><strong>"Is this the right thing to build?"</strong><br>
+                <span style="color:var(--muted); font-size:.88rem;">→ The spec review gate, which must be human-approved before tests are written, answers this explicitly.</span>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <p style="color:var(--accent3); font-weight:700; font-size:.9rem; margin-bottom:.5rem;">SDD weaknesses → STDD solutions</p>
+            <ul>
+              <li><strong>"Specs can be ignored by LLMs"</strong><br>
+                <span style="color:var(--muted); font-size:.88rem;">→ Tests are the spec in executable form. LLMs cannot ignore a failing test suite.</span>
+              </li>
+              <li style="margin-top:.75rem;"><strong>"Review overhead / too many files"</strong><br>
+                <span style="color:var(--muted); font-size:.88rem;">→ One spec + one test file = two artifacts per feature. Tests are already the review mechanism.</span>
+              </li>
+              <li style="margin-top:.75rem;"><strong>"Agents still drift from specs"</strong><br>
+                <span style="color:var(--muted); font-size:.88rem;">→ Drift is caught by the test suite. Code that drifts from the spec will fail tests derived from that spec.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="callout green" style="margin-top:1.5rem; margin-bottom:0;">
+          <strong>The synthesis insight</strong>
+          TDD's executable verification + SDD's human-readable intent = a closed loop
+          where the spec and the tests are mutually enforcing. The LLM cannot satisfy
+          one without satisfying the other. This is what neither methodology achieves alone.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────── PHASES ────────────────────────── -->
+<section id="phases">
+  <div class="container">
+    <h2>The Three Phases</h2>
+    <p>
+      Each phase is a hard gate. You cannot proceed to the next phase until
+      the current one is complete and reviewed.
+    </p>
+
+    <div class="phase-cards">
+
+      <!-- PHASE 1 -->
+      <div class="phase-card spec">
+        <div class="phase-num">Phase 01 — Specification</div>
+        <h3>📋 Write the Spec</h3>
+        <p>
+          Before a single line of code or test is written, the team produces a structured
+          specification document. This is a human-readable, machine-parseable description
+          of <em>what</em> the feature must do — not how.
+        </p>
+        <p>
+          The spec must define: goals, actors, inputs, outputs, acceptance criteria,
+          constraints, and known edge cases. It should be detailed enough that two
+          engineers with no prior context would reach the same implementation decisions.
+        </p>
+        <ul>
+          <li><strong>Format:</strong> Markdown, YAML, or structured prose</li>
+          <li><strong>Owner:</strong> Human (engineer + product) — LLM assists, does not author</li>
+          <li><strong>Gate:</strong> Spec review / approval before moving to Phase 2</li>
+          <li><strong>Output artifact:</strong> <code>spec.md</code> (versioned in source control)</li>
+        </ul>
+      </div>
+
+      <!-- PHASE 2 -->
+      <div class="phase-card test">
+        <div class="phase-num">Phase 02 — Tests</div>
+        <h3>🧪 Write the Tests (from the spec)</h3>
+        <p>
+          With the spec approved, tests are written <em>directly from its acceptance criteria</em>.
+          This is the moment the LLM becomes a powerful collaborator: given the spec, it can
+          generate a comprehensive test suite — unit tests, integration tests, edge-case tests,
+          and regression guards.
+        </p>
+        <p>
+          All generated tests must be reviewed by a human. Tests that cannot be derived
+          directly from the spec are discarded. No tests may reference implementation details.
+        </p>
+        <ul>
+          <li><strong>Source of truth:</strong> Only the spec — no guessing about implementation</li>
+          <li><strong>LLM role:</strong> Generates test scaffolding from spec criteria</li>
+          <li><strong>Gate:</strong> Test suite must compile, run, and <em>all fail</em> (red phase)</li>
+          <li><strong>Output artifact:</strong> <code>feature.test.ts</code> (or equivalent)</li>
+        </ul>
+        <div class="callout green" style="margin-top:1rem; margin-bottom:0;">
+          <strong>Why tests must fail at this stage</strong>
+          If a test passes before any implementation exists, it either tests the wrong thing
+          or validates pre-existing behavior. Both are dangerous assumptions. All tests
+          must be red before Phase 3 begins.
+        </div>
+      </div>
+
+      <!-- PHASE 3 -->
+      <div class="phase-card code">
+        <div class="phase-num">Phase 03 — Implementation</div>
+        <h3>⚙️ Write the Code (to make tests pass)</h3>
+        <p>
+          Only after the spec is approved and the failing test suite exists does
+          implementation begin. The LLM now has a precise target: make all tests pass
+          without breaking any existing tests in the codebase.
+        </p>
+        <p>
+          The implementation goal is explicit and verifiable. There is no ambiguity
+          about "done" — the feature is complete when the full test suite is green,
+          including the pre-existing regression suite.
+        </p>
+        <ul>
+          <li><strong>LLM role:</strong> Generates implementation guided by tests</li>
+          <li><strong>Constraint:</strong> Must not modify test files to make tests pass</li>
+          <li><strong>Gate:</strong> All new tests green + zero regressions in existing suite</li>
+          <li><strong>Output artifact:</strong> Production code + updated <code>CHANGELOG</code></li>
+        </ul>
+      </div>
+
+    </div>
+
+    <h3>The Feedback Loop</h3>
+    <p>
+      STDD is not strictly linear. Each phase may trigger a return to an earlier one:
+    </p>
+    <div class="loop-diagram">
+      <div class="loop-row">
+        <div class="loop-box lb-spec">Spec</div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-box lb-test">Tests</div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-box lb-code">Code</div>
+        <div class="loop-arrow">→</div>
+        <div class="loop-box lb-review">Review</div>
+      </div>
+      <div style="margin-top:1.25rem; color:var(--muted); font-size:.88rem;">
+        ↖ <em>Test exposes spec ambiguity → revise spec</em>
+        &nbsp;|&nbsp;
+        ↖ <em>Code exposes impossible test → revisit spec + tests</em>
+      </div>
+      <p class="loop-sub" style="margin-top:.75rem;">
+        The cycle terminates only when all three artifacts are mutually consistent.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────── LLM WORKFLOW ────────────────────────── -->
+<section id="llm">
+  <div class="container">
+    <h2>STDD with <span class="tag tag-llm">LLMs</span></h2>
+    <p>
+      STDD was designed with LLM-assisted development as a first-class citizen.
+      The methodology deliberately assigns the LLM specific, bounded roles
+      at each phase — preventing the most common failure modes of AI coding tools.
+    </p>
+
+    <ol class="llm-steps">
+      <li>
+        <div>
+          <h4>Human writes the spec (LLM assists on structure)</h4>
+          <p>
+            The human defines goals, actors, and acceptance criteria. The LLM can
+            be used to identify gaps, suggest edge cases, or reformat the spec —
+            but the semantic content must be human-authored. Prompt: <em>"Review
+            this spec for ambiguity, missing edge cases, and contradictions."</em>
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>LLM generates tests from the spec</h4>
+          <p>
+            Given the approved spec, the LLM generates a comprehensive test suite.
+            Prompt: <em>"Given this spec, generate failing tests for every acceptance
+            criterion. Do not assume any implementation. Use [language/framework]."</em>
+            Human reviews and approves each test.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Human runs the tests — confirms all are red</h4>
+          <p>
+            This is a non-negotiable human step. The human runs the test suite
+            and confirms every new test fails. Any test that passes is investigated
+            before proceeding.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>LLM implements the feature against the tests</h4>
+          <p>
+            Now the LLM generates implementation code. Prompt: <em>"Implement the
+            feature described in spec.md so that all tests in feature.test.ts pass.
+            Do not modify test files. Run the full test suite before responding."</em>
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Verify: new tests green + zero regressions</h4>
+          <p>
+            The complete test suite (new + existing) must pass. If any pre-existing
+            test fails, the LLM must fix the regression before the PR can be opened.
+            This gate is automated via CI.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Human review of spec ↔ tests ↔ code consistency</h4>
+          <p>
+            Final human review checks that the implementation matches the spirit
+            of the spec — not just the letter of the tests. The spec, tests, and code
+            are committed together as a single atomic change.
+          </p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="callout purple">
+      <strong>Why this prevents the core LLM failure mode</strong>
+      Without STDD, an LLM asked to "implement X" will hallucinate requirements,
+      skip edge cases, and produce code that looks correct but isn't. By forcing
+      the LLM to first work from a human-approved spec to produce tests — and only
+      then produce code — every implementation decision has a traceable, reviewable
+      origin. The LLM cannot drift.
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────── EXAMPLE ────────────────────────── -->
+<section id="example">
+  <div class="container">
+    <h2>Worked Example</h2>
+    <p>
+      A simple feature — <strong>user password reset via email token</strong> —
+      implemented with STDD. Notice how each phase artifact constrains the next.
+    </p>
+
+    <!-- SPEC FILE -->
+    <div class="example-tabs">
+      <div class="tab-header">
+        <span class="active">📋 spec.md — Phase 1</span>
+      </div>
+      <div class="tab-content">
+<pre><span style="color:#6c8eff"># SPEC: Password Reset via Email Token</span>
+<span style="color:#8892a4">## Version: 1.0.0 | Status: Approved | Author: eng-team</span>
+
+<span style="color:#34d399">## 1. Goal</span>
+Allow authenticated users to reset their password via a time-limited
+email token, without exposing current credentials.
+
+<span style="color:#34d399">## 2. Actors</span>
+- User (unauthenticated, knows their email address)
+- Email service (external, async)
+- Token store (internal, Redis)
+
+<span style="color:#34d399">## 3. Acceptance Criteria</span>
+
+AC-01: Given a valid email, a reset token is generated and stored.
+  - Token length: 32 bytes (hex-encoded, 64 chars)
+  - Token TTL: 15 minutes
+  - Only one active token per user at a time (previous tokens invalidated)
+
+AC-02: The token is sent to the provided email address.
+  - Email must match an existing account — otherwise: silent success (no enumeration)
+  - Email delivery failure must not block the HTTP response
+
+AC-03: Given a valid token, the user can set a new password.
+  - Token must be consumed (deleted) after first use
+  - New password: min 12 chars, at least 1 uppercase, 1 digit, 1 special char
+  - On success: all existing sessions for that user are invalidated
+
+AC-04: Expired or already-used tokens are rejected.
+  - Response: 400 Bad Request (no distinction between expired/used/invalid)
+
+AC-05: Rate limiting
+  - Max 3 reset requests per email per hour
+  - On limit exceeded: 429 Too Many Requests
+
+<span style="color:#34d399">## 4. Constraints</span>
+- Tokens must be cryptographically random (crypto.randomBytes, not Math.random)
+- Token must never appear in server logs
+- Endpoint must be available without authentication</pre>
+      </div>
+    </div>
+
+    <!-- TEST FILE -->
+    <div class="example-tabs" style="margin-top:1.5rem;">
+      <div class="tab-header">
+        <span class="active">🧪 password-reset.test.ts — Phase 2</span>
+      </div>
+      <div class="tab-content">
+<pre><span style="color:#8892a4">// Generated from spec.md — DO NOT modify without updating spec</span>
+<span style="color:#8892a4">// All tests must be RED before Phase 3 begins</span>
+
+<span style="color:#a78bfa">import</span> { describe, it, expect, beforeEach, vi } <span style="color:#a78bfa">from</span> <span style="color:#34d399">'vitest'</span>
+<span style="color:#a78bfa">import</span> { requestPasswordReset, consumeResetToken } <span style="color:#a78bfa">from</span> <span style="color:#34d399">'../src/auth/password-reset'</span>
+
+<span style="color:#6c8eff">describe</span>(<span style="color:#34d399">'AC-01: Token generation'</span>, () => {
+  it(<span style="color:#34d399">'generates a 64-char hex token for a valid email'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">const</span> token = <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>)
+    expect(token).toMatch(<span style="color:#fb923c">/^[a-f0-9]{64}$/</span>)
+  })
+
+  it(<span style="color:#34d399">'invalidates previous tokens when a new one is requested'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">const</span> first  = <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>)
+    <span style="color:#a78bfa">const</span> second = <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>)
+    <span style="color:#a78bfa">const</span> firstValid = <span style="color:#a78bfa">await</span> isTokenValid(first)
+    expect(firstValid).toBe(<span style="color:#fb923c">false</span>)
+  })
+
+  it(<span style="color:#34d399">'stores token with 15-minute TTL'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">const</span> token = <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>)
+    <span style="color:#a78bfa">const</span> ttl = <span style="color:#a78bfa">await</span> getTokenTTL(token)
+    expect(ttl).toBeLessThanOrEqual(<span style="color:#fb923c">900</span>) <span style="color:#8892a4">// 15 min in seconds</span>
+    expect(ttl).toBeGreaterThan(<span style="color:#fb923c">890</span>)
+  })
+})
+
+<span style="color:#6c8eff">describe</span>(<span style="color:#34d399">'AC-02: Email delivery'</span>, () => {
+  it(<span style="color:#34d399">'returns success silently for non-existent email (no enumeration)'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">const</span> res = <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'ghost@nowhere.com'</span>)
+    expect(res).toBeUndefined() <span style="color:#8892a4">// no error thrown, no token returned</span>
+  })
+
+  it(<span style="color:#34d399">'does not block response on email delivery failure'</span>, <span style="color:#a78bfa">async</span> () => {
+    mockEmailService.fail()
+    <span style="color:#a78bfa">const</span> start = Date.now()
+    <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>)
+    expect(Date.now() - start).toBeLessThan(<span style="color:#fb923c">200</span>) <span style="color:#8892a4">// fire-and-forget</span>
+  })
+})
+
+<span style="color:#6c8eff">describe</span>(<span style="color:#34d399">'AC-03: Token consumption'</span>, () => {
+  it(<span style="color:#34d399">'allows password change with valid token'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">const</span> token = <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>)
+    <span style="color:#a78bfa">await</span> expect(consumeResetToken(token, <span style="color:#34d399">'NewP@ssw0rd!1'</span>)).resolves.toBeDefined()
+  })
+
+  it(<span style="color:#34d399">'deletes token after first use'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">const</span> token = <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>)
+    <span style="color:#a78bfa">await</span> consumeResetToken(token, <span style="color:#34d399">'NewP@ssw0rd!1'</span>)
+    <span style="color:#a78bfa">await</span> expect(consumeResetToken(token, <span style="color:#34d399">'NewP@ssw0rd!2'</span>)).rejects.toThrow()
+  })
+
+  it(<span style="color:#34d399">'invalidates all user sessions on success'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">const</span> sessions = <span style="color:#a78bfa">await</span> getActiveSessions(<span style="color:#34d399">'user@example.com'</span>)
+    expect(sessions.length).toBe(<span style="color:#fb923c">0</span>)
+  })
+})
+
+<span style="color:#6c8eff">describe</span>(<span style="color:#34d399">'AC-04: Invalid tokens'</span>, () => {
+  it(<span style="color:#34d399">'rejects expired token with 400'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">const</span> expiredToken = <span style="color:#a78bfa">await</span> createExpiredToken()
+    <span style="color:#a78bfa">await</span> expect(consumeResetToken(expiredToken, <span style="color:#34d399">'NewP@ssw0rd!1'</span>))
+      .rejects.toMatchObject({ status: <span style="color:#fb923c">400</span> })
+  })
+})
+
+<span style="color:#6c8eff">describe</span>(<span style="color:#34d399">'AC-05: Rate limiting'</span>, () => {
+  it(<span style="color:#34d399">'returns 429 after 3 requests in one hour'</span>, <span style="color:#a78bfa">async</span> () => {
+    <span style="color:#a78bfa">for</span> (<span style="color:#a78bfa">let</span> i = <span style="color:#fb923c">0</span>; i &lt; <span style="color:#fb923c">3</span>; i++) <span style="color:#a78bfa">await</span> requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>)
+    <span style="color:#a78bfa">await</span> expect(requestPasswordReset(<span style="color:#34d399">'user@example.com'</span>))
+      .rejects.toMatchObject({ status: <span style="color:#fb923c">429</span> })
+  })
+})</pre>
+      </div>
+    </div>
+
+    <!-- CODE GATE -->
+    <div class="callout green" style="margin-top:1.5rem;">
+      <strong>Gate check before Phase 3</strong>
+      Run <code>vitest run password-reset.test.ts</code> — every test must fail.
+      If any pass, investigate before proceeding. Phase 3 can now begin.
+    </div>
+
+    <!-- CODE PHASE -->
+    <div class="example-tabs" style="margin-top:1.5rem;">
+      <div class="tab-header">
+        <span class="active">⚙️ LLM Prompt — Phase 3</span>
+      </div>
+      <div class="tab-content">
+<pre><span style="color:#8892a4"># Prompt sent to LLM for implementation</span>
+
+You are implementing a feature in a TypeScript/Node.js application.
+
+<span style="color:#34d399">## Your inputs</span>
+1. The approved spec: [contents of spec.md]
+2. The test suite: [contents of password-reset.test.ts]
+3. The existing codebase context: [relevant files]
+
+<span style="color:#34d399">## Your task</span>
+Implement `src/auth/password-reset.ts` so that ALL tests in
+`password-reset.test.ts` pass.
+
+<span style="color:#34d399">## Hard constraints</span>
+- Do NOT modify any test file
+- Do NOT use Math.random() — use crypto.randomBytes()
+- Token must NEVER appear in any log statement
+- Run the FULL test suite (including pre-existing tests) before responding
+- If any pre-existing test fails, fix the regression before responding
+
+<span style="color:#34d399">## Definition of done</span>
+All tests in password-reset.test.ts: GREEN
+All pre-existing tests: GREEN
+No test files modified</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────── COMPARE ────────────────────────── -->
+<section id="compare">
+  <div class="container">
+    <h2>STDD vs. TDD vs. SDD</h2>
+    <p>
+      STDD is not a replacement for TDD or SDD — it synthesizes and extends both
+      by adding the missing integration between them.
+    </p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Capability</th>
+          <th>TDD</th>
+          <th>SDD</th>
+          <th>STDD</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Prevents spec drift</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Prevents regression</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>LLM-safe (bounded role)</td>
+          <td><span class="partial">~</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Verifiable "done" criteria</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Human-readable intent artifact</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Traceable requirement → test → code</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Edge-case coverage by design</td>
+          <td><span class="partial">~</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Works on brownfield codebases</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Mandatory human review gates</td>
+          <td><span class="partial">~</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Prevents LLM hallucination in code</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="muted"><span class="check">✓</span> Supported &nbsp;|&nbsp; <span class="partial">~</span> Partially &nbsp;|&nbsp; <span class="cross">✗</span> Not addressed</p>
+
+    <div class="callout orange">
+      <strong>The key insight</strong>
+      TDD tells you <em>when</em> code is correct (tests pass). SDD tells you
+      <em>what</em> to build (the spec). STDD is the only methodology that
+      explicitly connects the two — tests are not written from memory or convention;
+      they are derived directly and traceably from the spec.
+    </div>
+  </div>
+</section>
+
+<!-- ────────────────────────── WHY ────────────────────────── -->
+<section id="why">
+  <div class="container">
+    <h2>Why STDD Matters Now</h2>
+    <p>
+      AI coding tools have fundamentally changed the cost structure of software development.
+      Writing code is no longer the expensive step — <em>deciding what to write</em> and
+      <em>verifying it is correct</em> are. STDD is designed for exactly this reality.
+    </p>
+
+    <div class="benefits">
+      <div class="benefit">
+        <div class="benefit-icon">🛡️</div>
+        <h4>No Silent Regressions</h4>
+        <p>The full regression suite runs before any code is merged. LLM-generated code that breaks existing contracts is caught immediately, not in production.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">🎯</div>
+        <h4>Unambiguous "Done"</h4>
+        <p>A feature is complete when all spec-derived tests are green. There is no subjectivity. Reviews become much faster because the criteria are explicit.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">📎</div>
+        <h4>Full Traceability</h4>
+        <p>Every test maps to an acceptance criterion. Every line of production code exists to make a test pass. Audits, postmortems, and onboarding all benefit.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">🤖</div>
+        <h4>LLM as Amplifier, Not Author</h4>
+        <p>The LLM never decides what to build. It executes well-defined tasks: generate tests from spec, generate code from tests. Human judgment stays in control.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">🔄</div>
+        <h4>Safe Iteration</h4>
+        <p>Changing a feature means updating the spec first, then the tests, then the code — in that order. Scope creep and design drift are structurally prevented.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">📦</div>
+        <h4>Works on Legacy Codebases</h4>
+        <p>Unlike spec-as-source approaches, STDD requires no rewrite of existing systems. It can be adopted incrementally, one feature at a time.</p>
+      </div>
+    </div>
+
+    <h3>Known Trade-offs</h3>
+    <p>
+      STDD is not free. It requires more upfront discipline than simply prompting an LLM
+      and shipping whatever comes out. Teams adopting STDD should expect:
+    </p>
+    <ul style="padding-left:1.5rem; color:var(--muted); margin-bottom:1.5rem;">
+      <li style="margin-bottom:.5rem;">
+        <strong style="color:var(--text);">Higher initial cost per feature</strong> —
+        Writing a thorough spec and reviewing LLM-generated tests takes real time.
+        The payoff is in reduced debugging, fewer incidents, and faster reviews.
+      </li>
+      <li style="margin-bottom:.5rem;">
+        <strong style="color:var(--text);">Spec quality determines everything</strong> —
+        A vague spec produces vague tests and unpredictable code. The methodology
+        raises the stakes on specification quality.
+      </li>
+      <li style="margin-bottom:.5rem;">
+        <strong style="color:var(--text);">Not ideal for exploratory work</strong> —
+        Prototypes, spikes, and discovery work should not use STDD. Apply it when
+        building features for production systems with real users.
+      </li>
+      <li>
+        <strong style="color:var(--text);">Requires test discipline</strong> —
+        STDD only works if the team is committed to never modifying tests to make
+        them pass. This requires cultural buy-in, not just tooling.
+      </li>
+    </ul>
+
+    <blockquote>
+      "The spec is the most important artifact. The tests are its executable form.
+       The code is just the cheapest thing that makes the tests pass."
+      <cite>— STDD Manifesto</cite>
+    </blockquote>
+
+    <h3>Getting Started</h3>
+    <p>You do not need new tools to adopt STDD. Start with:</p>
+    <pre>1. Pick one upcoming feature
+2. Write spec.md before opening your editor
+3. Get spec approved by a teammate
+4. Prompt your LLM to generate tests from the spec
+5. Confirm all tests are red
+6. Prompt your LLM to implement the feature against the tests
+7. Verify: new tests green, no regressions
+8. Commit spec + tests + code as one atomic PR</pre>
+    <p>
+      After three features, the pattern will feel natural. After ten,
+      you will not want to develop any other way.
+    </p>
+  </div>
+</section>
+
+<!-- ────────────────────────── FOOTER ────────────────────────── -->
+<footer>
+  <div class="foot-logo">STDD</div>
+  <p>Spec &amp; Test-Driven Development</p>
+  <p style="margin-top:.5rem;">
+    A methodology for humans who use LLMs to build software that works.
+  </p>
+
+  <div style="margin: 1.5rem auto; max-width: 480px; background: #181b24; border: 1px solid #2a2f42; border-radius: 12px; padding: 1.25rem 1.5rem;">
+    <div style="font-family:'Courier New',monospace; font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:#8892a4; margin-bottom:.5rem;">Created by</div>
+    <div style="font-size:1.1rem; font-weight:700; color:#e2e8f0;">
+      <a href="https://github.com/soul-asylumm" target="_blank" style="color:#6c8eff; text-decoration:none;">@soul-asylumm</a>
+    </div>
+    <div style="font-size:.85rem; color:#8892a4; margin-top:.35rem;">March 2026 · Original author of the STDD methodology</div>
+    <div style="font-size:.82rem; color:#8892a4; margin-top:.25rem;">
+      Conceived after reading Birgitta Böckeler's SDD analysis and identifying the missing bridge between spec and executable verification.
+    </div>
+  </div>
+
+  <p style="font-size:.8rem; color:#8892a4;">
+    Built on the foundations of
+    <a href="https://martinfowler.com/bliki/TestDrivenDevelopment.html" target="_blank">TDD (Kent Beck, 1999)</a> ·
+    <a href="https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html" target="_blank">SDD (Böckeler, Thoughtworks 2025)</a>
+    <br>Concepts from <em>"Exploring Gen AI · SDD with 3 Tools"</em> — martinfowler.com
+  </p>
+</footer>
+
+</body>
+</html>
