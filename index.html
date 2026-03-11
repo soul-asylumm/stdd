@@ -947,40 +947,111 @@
     <h2>STDD with <span class="tag tag-llm">LLMs</span></h2>
     <p>
       STDD was designed with LLM-assisted development as a first-class citizen.
-      The methodology deliberately assigns the LLM specific, bounded roles
-      at each phase — preventing the most common failure modes of AI coding tools.
+      The methodology deliberately assigns the LLM <strong>specific, bounded roles
+      at each phase</strong> — preventing the most common failure modes of AI coding tools.
     </p>
+
+    <div class="callout orange">
+      <strong>The golden rule of STDD + LLMs</strong>
+      The LLM <em>reacts</em> to what the human produces — it never originates decisions.
+      In Phase 1 it reacts to your draft spec. In Phase 2 it reacts to the approved spec.
+      In Phase 3 it reacts to the failing tests. Human judgment is always the source.
+    </div>
 
     <ol class="llm-steps">
       <li>
         <div>
-          <h4>Human writes the spec (LLM assists on structure)</h4>
+          <h4>Human drafts the spec — even if incomplete</h4>
           <p>
-            The human defines goals, actors, and acceptance criteria. The LLM can
-            be used to identify gaps, suggest edge cases, or reformat the spec —
-            but the semantic content must be human-authored. Prompt: <em>"Review
-            this spec for ambiguity, missing edge cases, and contradictions."</em>
+            Start writing. Even a rough draft is enough to unlock the LLM's best
+            contributions. The human defines goals, actors, inputs, outputs, and acceptance
+            criteria. It does not need to be perfect — Phase 1 is iterative.
           </p>
         </div>
       </li>
       <li>
         <div>
-          <h4>LLM generates tests from the spec</h4>
+          <h4>LLM reviews and strengthens the spec (assistant, not author)</h4>
           <p>
-            Given the approved spec, the LLM generates a comprehensive test suite.
-            Prompt: <em>"Given this spec, generate failing tests for every acceptance
-            criterion. Do not assume any implementation. Use [language/framework]."</em>
-            Human reviews and approves each test.
+            This is where the LLM adds enormous value in Phase 1 — not by writing the spec,
+            but by pressure-testing it. Use these prompts in sequence:
+          </p>
+          <div class="example-tabs" style="margin-top:.75rem;">
+            <div class="tab-header">
+              <span class="active">Prompts for spec review</span>
+            </div>
+            <div class="tab-content">
+<pre><span style="color:#8892a4"># 1. Find ambiguities</span>
+<span style="color:#34d399">"Review this spec and point out any acceptance criteria that are
+vague, contradictory, or that two engineers could interpret differently."</span>
+
+<span style="color:#8892a4"># 2. Find missing edge cases</span>
+<span style="color:#34d399">"What edge cases, error states, or boundary conditions does this
+spec not cover? List each one with a brief explanation of the risk."</span>
+
+<span style="color:#8892a4"># 3. Check testability</span>
+<span style="color:#34d399">"Is this spec detailed enough to generate tests without making
+any assumptions? List every assumption a developer would have to make."</span>
+
+<span style="color:#8892a4"># 4. Socratic questioning</span>
+<span style="color:#34d399">"Ask me 5 questions about this spec whose answers would change
+the implementation significantly."</span>
+
+<span style="color:#8892a4"># 5. Final completeness check</span>
+<span style="color:#34d399">"Does this spec define: goal, actors, inputs, outputs, acceptance
+criteria, constraints, and edge cases? What is missing?"</span></pre>
+            </div>
+          </div>
+          <p style="margin-top:.75rem; color:var(--muted); font-size:.9rem;">
+            The human decides which suggestions to accept or reject. The LLM proposes — the human disposes.
           </p>
         </div>
       </li>
       <li>
         <div>
-          <h4>Human runs the tests — confirms all are red</h4>
+          <h4>Human approves the spec — a second human reviews it</h4>
           <p>
-            This is a non-negotiable human step. The human runs the test suite
-            and confirms every new test fails. Any test that passes is investigated
-            before proceeding.
+            The spec is approved by a human who was not involved in writing it.
+            This is the hardest gate to skip and the most valuable one.
+            A spec that cannot be understood by a fresh reader is not ready.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>LLM generates tests directly from the spec</h4>
+          <p>
+            With the approved spec, the LLM generates a comprehensive test suite.
+            Every test must be traceable to a specific acceptance criterion.
+            No criterion, no test.
+          </p>
+          <div class="example-tabs" style="margin-top:.75rem;">
+            <div class="tab-header">
+              <span class="active">Prompt for test generation</span>
+            </div>
+            <div class="tab-content">
+<pre><span style="color:#34d399">"Given the spec below, generate a failing test for every acceptance
+criterion. Label each test with the AC it covers (e.g. AC-01, AC-02).
+Do not assume any implementation detail. Use [language/framework].
+Every test must fail when run against an empty implementation."</span>
+
+<span style="color:#8892a4">[paste spec.md here]</span></pre>
+            </div>
+          </div>
+          <p style="margin-top:.75rem; color:var(--muted); font-size:.9rem;">
+            Human reviews every generated test. Tests that cannot be directly traced
+            to the spec are discarded.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Human runs the tests — confirms all are red 🔴</h4>
+          <p>
+            Non-negotiable human step. Run the full test suite and confirm every
+            new test fails. A test that passes before implementation exists is either
+            testing the wrong thing or validating pre-existing behavior — both are
+            dangerous assumptions that must be investigated before proceeding.
           </p>
         </div>
       </li>
@@ -988,27 +1059,42 @@
         <div>
           <h4>LLM implements the feature against the tests</h4>
           <p>
-            Now the LLM generates implementation code. Prompt: <em>"Implement the
-            feature described in spec.md so that all tests in feature.test.ts pass.
-            Do not modify test files. Run the full test suite before responding."</em>
+            Now the LLM generates implementation code with a precise, verifiable target.
+          </p>
+          <div class="example-tabs" style="margin-top:.75rem;">
+            <div class="tab-header">
+              <span class="active">Prompt for implementation</span>
+            </div>
+            <div class="tab-content">
+<pre><span style="color:#34d399">"Implement the feature described in spec.md so that all tests in
+feature.test.ts pass. Hard constraints:
+- Do NOT modify any test file
+- Run the FULL test suite (including pre-existing tests) before responding
+- If any pre-existing test fails, fix the regression before responding
+- Definition of done: all new tests GREEN + zero regressions"</span>
+
+<span style="color:#8892a4">[paste spec.md]
+[paste feature.test.ts]
+[paste relevant existing code context]</span></pre>
+            </div>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>Verify: new tests green 🟢 + zero regressions</h4>
+          <p>
+            The complete test suite — new and existing — must pass. If any
+            pre-existing test fails, the LLM must fix the regression before
+            the PR is opened. This gate is automated via CI.
           </p>
         </div>
       </li>
       <li>
         <div>
-          <h4>Verify: new tests green + zero regressions</h4>
+          <h4>Human review: spec ↔ tests ↔ code consistency</h4>
           <p>
-            The complete test suite (new + existing) must pass. If any pre-existing
-            test fails, the LLM must fix the regression before the PR can be opened.
-            This gate is automated via CI.
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <h4>Human review of spec ↔ tests ↔ code consistency</h4>
-          <p>
-            Final human review checks that the implementation matches the spirit
+            Final human review checks that the implementation matches the <em>spirit</em>
             of the spec — not just the letter of the tests. The spec, tests, and code
             are committed together as a single atomic change.
           </p>
@@ -1016,13 +1102,40 @@
       </li>
     </ol>
 
+    <h3>LLM Role Summary by Phase</h3>
+    <table class="compare-table">
+      <thead>
+        <tr><th>Phase</th><th>Human does</th><th>LLM does</th><th>LLM does NOT</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-spec">Spec</span></td>
+          <td>Defines requirements, accepts/rejects suggestions, approves</td>
+          <td>Finds ambiguities, suggests edge cases, checks completeness</td>
+          <td class="cross">Author requirements, define behavior</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-test">Tests</span></td>
+          <td>Reviews each test, confirms all are red, approves suite</td>
+          <td>Generates test scaffolding from spec criteria</td>
+          <td class="cross">Invent tests without spec basis</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-code">Code</span></td>
+          <td>Reviews implementation, verifies regression suite</td>
+          <td>Implements feature to make tests pass</td>
+          <td class="cross">Modify test files, skip regression check</td>
+        </tr>
+      </tbody>
+    </table>
+
     <div class="callout purple">
       <strong>Why this prevents the core LLM failure mode</strong>
       Without STDD, an LLM asked to "implement X" will hallucinate requirements,
-      skip edge cases, and produce code that looks correct but isn't. By forcing
-      the LLM to first work from a human-approved spec to produce tests — and only
-      then produce code — every implementation decision has a traceable, reviewable
-      origin. The LLM cannot drift.
+      skip edge cases, and produce code that looks correct but isn't. STDD breaks
+      the problem into three bounded tasks — each with a verifiable output — so the
+      LLM operates with precision at every step. It cannot drift because every output
+      is checked against the previous phase's artifact.
     </div>
   </div>
 </section>
