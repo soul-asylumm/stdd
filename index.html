@@ -606,7 +606,7 @@
 
 <!-- ────────────────────────── HERO ────────────────────────── -->
 <div class="hero">
-  <div class="hero-badge">Methodology · AI-First Development · March 2026</div>
+  <div class="hero-badge">Proposed Methodology · AI-First Development · March 2026</div>
   <h1>
     <span class="s">S</span><span class="t">T</span><span class="d">D</span><span class="d2">D</span>
   </h1>
@@ -646,24 +646,32 @@
   <div class="container">
     <h2>What is STDD?</h2>
     <p>
-      <strong>Spec &amp; Test-Driven Development (STDD)</strong> is a three-phase methodology
-      designed for the age of LLM-assisted coding. It enforces a strict gate between
-      <em>thinking about what to build</em> and <em>actually building it</em>.
+      <strong>Spec &amp; Test-Driven Development (STDD)</strong> is a proposed three-phase workflow
+      for LLM-assisted coding. The central idea is simple: establish a human-approved contract
+      <em>before</em> generating tests, and a failing test suite <em>before</em> generating code —
+      so the LLM always operates with a precise, verifiable target.
     </p>
     <p>
-      Where <span class="tag tag-spec">SDD</span> — popularized by tools like Kiro, Spec-kit and Tessl
-      and analyzed by Birgitta Böckeler (Thoughtworks, 2025) — asks you to write specs before code,
-      and <span class="tag tag-test">TDD</span> — Kent Beck's discipline of Red→Green→Refactor — asks
-      you to write tests before code, STDD fuses both into a single ordered pipeline where
-      each phase artifact enforces the next:
+      It draws on two established disciplines: <span class="tag tag-test">TDD</span> (Kent Beck's
+      Red→Green→Refactor) and <span class="tag tag-spec">SDD</span> (spec-first approaches popularized
+      by tools like Kiro and Spec-kit). The specific contribution STDD proposes is making the
+      <em>connection between them explicit and mandatory</em>: tests must be derived directly from
+      the spec, not from the developer's memory. This is also related to <span class="tag tag-llm">BDD</span>
+      and ATDD — methodologies that share similar goals — but STDD focuses specifically on
+      how LLMs should be assigned bounded roles at each phase rather than being given open-ended prompts.
+    </p>
+    <p style="color:var(--muted); font-size:.92rem;">
+      <strong style="color:var(--accent4);">⚠ Important:</strong> STDD is a proposal, not a proven methodology.
+      It has not been validated at scale across different team sizes, codebases, or domains.
+      This document is an invitation to experiment, discuss, and iterate — not a prescription.
     </p>
 
     <div class="callout">
-      <strong>The Core Principle</strong>
-      A specification answers <em>"what should this do?"</em>. Tests verify that answer
-      against observable behavior. Code is just the mechanism that makes tests pass.
-      When an LLM generates code, it must satisfy <em>both layers</em> of truth — not just
-      produce plausible-looking output.
+      <strong>The Core Idea</strong>
+      A specification answers <em>"what should this do?"</em>. Tests make that answer executable.
+      Code is the mechanism that satisfies the tests. When an LLM is involved, having both layers
+      defined in advance — before any implementation — gives it a precise contract to work from
+      instead of filling in gaps with assumptions.
     </div>
 
     <p>
@@ -835,8 +843,14 @@
   <div class="container">
     <h2>The Three Phases</h2>
     <p>
-      Each phase is a hard gate. You cannot proceed to the next phase until
-      the current one is complete and reviewed.
+      Each phase produces a concrete artifact that the next phase depends on.
+      The ordering is the point — not as bureaucracy, but as a way to make
+      assumptions explicit before they get encoded in code.
+    </p>
+    <p style="color:var(--muted); font-size:.9rem;">
+      This workflow is designed for <strong>new features in existing or new projects</strong> —
+      not for prototyping, spikes, or exploratory work, where the requirements are still
+      too fluid to specify meaningfully.
     </p>
 
     <div class="phase-cards">
@@ -880,14 +894,17 @@
         <ul>
           <li><strong>Source of truth:</strong> Only the spec — no guessing about implementation</li>
           <li><strong>LLM role:</strong> Generates test scaffolding from spec criteria</li>
-          <li><strong>Gate:</strong> Test suite must compile, run, and <em>all fail</em> (red phase)</li>
+          <li><strong>Gate:</strong> Tests compile and run — new tests fail against a stub or empty implementation</li>
           <li><strong>Output artifact:</strong> <code>feature.test.ts</code> (or equivalent)</li>
         </ul>
         <div class="callout green" style="margin-top:1rem; margin-bottom:0;">
-          <strong>Why tests must fail at this stage</strong>
-          If a test passes before any implementation exists, it either tests the wrong thing
-          or validates pre-existing behavior. Both are dangerous assumptions. All tests
-          must be red before Phase 3 begins.
+          <strong>A note on mocks and stubs</strong>
+          Tests written in Phase 2 use mocks and stubs for external dependencies — they
+          should compile and run cleanly in CI. What they must <em>not</em> do is pass
+          against a real, empty implementation of the feature being built. The interface
+          is stubbed; the logic is not yet there. This keeps CI green on the test commit
+          while still making the intent of Phase 2 meaningful: the feature contract is
+          defined and verifiable before a single line of production logic is written.
         </div>
       </div>
 
@@ -1206,7 +1223,7 @@ AC-05: Rate limiting
       </div>
       <div class="tab-content">
 <pre><span style="color:#8892a4">// Generated from spec.md — DO NOT modify without updating spec</span>
-<span style="color:#8892a4">// All tests must be RED before Phase 3 begins</span>
+<span style="color:#8892a4">// External dependencies are mocked. Tests pass in CI but fail against empty implementation.</span>
 
 <span style="color:#a78bfa">import</span> { describe, it, expect, beforeEach, vi } <span style="color:#a78bfa">from</span> <span style="color:#34d399">'vitest'</span>
 <span style="color:#a78bfa">import</span> { requestPasswordReset, consumeResetToken } <span style="color:#a78bfa">from</span> <span style="color:#34d399">'../src/auth/password-reset'</span>
@@ -1285,8 +1302,9 @@ AC-05: Rate limiting
     <!-- CODE GATE -->
     <div class="callout green" style="margin-top:1.5rem;">
       <strong>Gate check before Phase 3</strong>
-      Run <code>vitest run password-reset.test.ts</code> — every test must fail.
-      If any pass, investigate before proceeding. Phase 3 can now begin.
+      Run <code>vitest run password-reset.test.ts</code> with the real (empty) implementation stubbed.
+      Tests that use mocks will compile; tests that assert on real feature behavior should fail.
+      If all pass without any implementation, the tests are not testing the right thing — investigate before proceeding.
     </div>
 
     <!-- CODE PHASE -->
@@ -1327,10 +1345,10 @@ No test files modified</pre>
 <!-- ────────────────────────── COMPARE ────────────────────────── -->
 <section id="compare">
   <div class="container">
-    <h2>STDD vs. TDD vs. SDD</h2>
+    <h2>STDD vs. TDD vs. BDD vs. SDD</h2>
     <p>
-      STDD is not a replacement for TDD or SDD — it synthesizes and extends both
-      by adding the missing integration between them.
+      STDD draws on established methodologies. It is worth being honest about what is new here
+      and what is not — and where the overlap with existing practices like BDD and ATDD is significant.
     </p>
 
     <table class="compare-table">
@@ -1338,70 +1356,67 @@ No test files modified</pre>
         <tr>
           <th>Capability</th>
           <th>TDD</th>
+          <th>BDD / ATDD</th>
           <th>SDD</th>
-          <th>STDD</th>
+          <th>STDD (proposed)</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Prevents spec drift</td>
+          <td>Tests before code</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
           <td><span class="cross">✗</span></td>
           <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Spec / intent before tests</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+        </tr>
+        <tr>
+          <td>Tests derived from spec (traceable)</td>
+          <td><span class="cross">✗</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="cross">✗</span></td>
           <td><span class="check">✓</span></td>
         </tr>
         <tr>
           <td>Prevents regression</td>
           <td><span class="check">✓</span></td>
-          <td><span class="cross">✗</span></td>
-          <td><span class="check">✓</span></td>
-        </tr>
-        <tr>
-          <td>LLM-safe (bounded role)</td>
-          <td><span class="partial">~</span></td>
-          <td><span class="partial">~</span></td>
-          <td><span class="check">✓</span></td>
-        </tr>
-        <tr>
-          <td>Verifiable "done" criteria</td>
           <td><span class="check">✓</span></td>
           <td><span class="cross">✗</span></td>
           <td><span class="check">✓</span></td>
         </tr>
         <tr>
-          <td>Human-readable intent artifact</td>
-          <td><span class="cross">✗</span></td>
-          <td><span class="check">✓</span></td>
-          <td><span class="check">✓</span></td>
-        </tr>
-        <tr>
-          <td>Traceable requirement → test → code</td>
+          <td>Explicit LLM role boundaries</td>
           <td><span class="cross">✗</span></td>
           <td><span class="cross">✗</span></td>
-          <td><span class="check">✓</span></td>
-        </tr>
-        <tr>
-          <td>Edge-case coverage by design</td>
-          <td><span class="partial">~</span></td>
           <td><span class="partial">~</span></td>
           <td><span class="check">✓</span></td>
         </tr>
         <tr>
-          <td>Works on brownfield codebases</td>
+          <td>Works on existing codebases (new features)</td>
+          <td><span class="check">✓</span></td>
           <td><span class="check">✓</span></td>
           <td><span class="partial">~</span></td>
           <td><span class="check">✓</span></td>
         </tr>
         <tr>
-          <td>Mandatory human review gates</td>
-          <td><span class="partial">~</span></td>
+          <td>No tooling required</td>
+          <td><span class="check">✓</span></td>
+          <td><span class="cross">✗</span></td>
           <td><span class="partial">~</span></td>
           <td><span class="check">✓</span></td>
         </tr>
         <tr>
-          <td>Prevents LLM hallucination in code</td>
-          <td><span class="cross">✗</span></td>
-          <td><span class="cross">✗</span></td>
+          <td>Validated at scale</td>
           <td><span class="check">✓</span></td>
+          <td><span class="check">✓</span></td>
+          <td><span class="partial">~</span></td>
+          <td><span class="cross">✗ not yet</span></td>
         </tr>
       </tbody>
     </table>
@@ -1409,11 +1424,13 @@ No test files modified</pre>
     <p class="muted"><span class="check">✓</span> Supported &nbsp;|&nbsp; <span class="partial">~</span> Partially &nbsp;|&nbsp; <span class="cross">✗</span> Not addressed</p>
 
     <div class="callout orange">
-      <strong>The key insight</strong>
-      TDD tells you <em>when</em> code is correct (tests pass). SDD tells you
-      <em>what</em> to build (the spec). STDD is the only methodology that
-      explicitly connects the two — tests are not written from memory or convention;
-      they are derived directly and traceably from the spec.
+      <strong>How STDD relates to BDD</strong>
+      BDD (Dan North, 2006) already connects human-readable specs to executable tests — that
+      is the core of Gherkin and Cucumber. STDD is not trying to replace BDD. The key difference
+      is focus: BDD optimizes for product-engineering communication through a shared language.
+      STDD focuses on how LLMs should participate in each phase — as reviewers in Phase 1, generators
+      in Phase 2, and implementors in Phase 3 — and on making that boundary explicit and enforceable.
+      Teams already using BDD can apply the STDD role model on top of their existing workflow.
     </div>
   </div>
 </section>
@@ -1421,11 +1438,17 @@ No test files modified</pre>
 <!-- ────────────────────────── WHY ────────────────────────── -->
 <section id="why">
   <div class="container">
-    <h2>Why STDD Matters Now</h2>
+    <h2>The Problem STDD Is Trying to Solve</h2>
     <p>
-      AI coding tools have fundamentally changed the cost structure of software development.
-      Writing code is no longer the expensive step — <em>deciding what to write</em> and
-      <em>verifying it is correct</em> are. STDD is designed for exactly this reality.
+      AI coding tools have shifted the cost structure of software development: writing code
+      is cheap now. The expensive steps are <em>deciding what to write</em> and <em>verifying
+      it is correct</em>. Without a structured approach, teams tend to skip both and ship
+      whatever the LLM produces — which looks plausible but drifts from the actual requirements.
+    </p>
+    <p>
+      STDD is a proposed answer to that specific problem. Whether it is the <em>right</em> answer —
+      or whether simpler adaptations of BDD, TDD, or code review practices are sufficient —
+      is an open question that requires real-world experimentation to answer.
     </p>
 
     <div class="benefits">
@@ -1490,29 +1513,61 @@ No test files modified</pre>
     </ul>
 
     <blockquote>
-      "The spec is the most important artifact. The tests are its executable form.
-       The code is just the cheapest thing that makes the tests pass."
-      <cite>— STDD Manifesto</cite>
+      "The spec is the contract. The tests are its executable form. The code is just
+       one possible implementation — and the cheapest part of the whole pipeline."
+      <cite>— STDD proposal</cite>
     </blockquote>
 
-    <h3>Getting Started</h3>
-    <p>You do not need new tools to adopt STDD. Start with:</p>
-    <pre>1. Pick one upcoming feature
-2. Write spec.md before opening your editor
-3. Get spec approved by a teammate
-4. Prompt your LLM to generate tests from the spec
-5. Confirm all tests are red
-6. Prompt your LLM to implement the feature against the tests
-7. Verify: new tests green, no regressions
-8. Commit in order: spec → tests → code (never squash)
-   # Each commit is a verifiable gate — the sequence is the proof
-   git commit "feat: add spec for X"        # tests must fail at this point
-   git commit "test: add failing tests for X" # CI confirms: all red
-   git commit "feat: implement X"            # CI confirms: all green, no regressions</pre>
+    <h3>Try It on One Feature</h3>
     <p>
-      After three features, the pattern will feel natural. After ten,
-      you will not want to develop any other way.
+      You do not need new tools or team buy-in to try this. Pick one upcoming feature,
+      apply the workflow, and observe what breaks down. That friction is the data.
     </p>
+    <pre>1. Pick one new feature in an existing or new project
+2. Write spec.md before opening your editor
+3. Get spec approved by a teammate (fresh eyes matter)
+4. Prompt your LLM: "generate tests from this spec, mock all external dependencies"
+5. Review every generated test — discard any without a spec criterion to back it
+6. Commit the spec + tests (CI should pass: mocks make tests compile and run)
+7. Prompt your LLM: "implement the feature so all tests pass, do not modify test files"
+8. Verify: all tests green, zero regressions in the existing suite
+9. Commit the implementation
+   # The three-commit sequence is the audit trail — do not squash
+   git commit "spec: define password reset feature"
+   git commit "test: add contract tests for password reset (AC-01 to AC-05)"
+   git commit "feat: implement password reset"</pre>
+
+    <h3>Known Limitations</h3>
+    <ul style="padding-left:1.5rem; color:var(--muted); margin-bottom:1.5rem;">
+      <li style="margin-bottom:.5rem;">
+        <strong style="color:var(--text);">Not suited for exploratory work</strong> —
+        If you do not know what you are building yet, writing a spec first will produce a spec that is wrong.
+        Use spikes and prototypes freely; apply STDD once the shape of the feature is clear.
+      </li>
+      <li style="margin-bottom:.5rem;">
+        <strong style="color:var(--text);">Spec quality determines test quality</strong> —
+        A vague spec produces vague tests. The workflow raises the stakes on writing good
+        acceptance criteria — which is a skill that takes practice.
+      </li>
+      <li style="margin-bottom:.5rem;">
+        <strong style="color:var(--text);">LLM-generated tests need careful review</strong> —
+        LLMs can generate tests that are syntactically correct but semantically trivial —
+        passing assertions that do not actually verify the intended behavior. Human review
+        of every generated test is not optional.
+      </li>
+      <li style="margin-bottom:.5rem;">
+        <strong style="color:var(--text);">Adds upfront cost</strong> —
+        Writing and reviewing a spec before coding takes real time. The bet is that this
+        cost is recovered in reduced debugging, fewer regressions, and faster code reviews.
+        That trade-off has not been measured for STDD specifically.
+      </li>
+      <li>
+        <strong style="color:var(--text);">Not yet validated</strong> —
+        This is a proposal based on reasoning from first principles and experience with
+        TDD, BDD, and LLM-assisted coding. It has not been studied across teams, project
+        types, or domains. Treat it as a hypothesis worth testing, not a prescription.
+      </li>
+    </ul>
   </div>
 </section>
 
